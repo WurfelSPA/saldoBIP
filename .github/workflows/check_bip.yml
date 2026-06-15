@@ -1,0 +1,28 @@
+name: Alerta Saldo Bip
+
+on:
+  schedule:
+    # Todos los viernes a las 11:00 UTC = 8:00 AM Chile (verano CLT)
+    - cron: "0 11 * * 5"
+  workflow_dispatch:   # Permite ejecutar manualmente desde GitHub
+
+jobs:
+  check-balance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verificar saldo Bip y notificar si es bajo
+        env:
+          BIP_CARD_NUMBER:   ${{ secrets.BIP_CARD_NUMBER }}
+          BALANCE_THRESHOLD: "1500"
+          CALLMEBOT_PHONE:   ${{ secrets.CALLMEBOT_PHONE }}
+          CALLMEBOT_APIKEY:  ${{ secrets.CALLMEBOT_APIKEY }}
+        run: python check_bip.py
