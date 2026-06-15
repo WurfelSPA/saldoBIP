@@ -2,7 +2,8 @@
 
 module.exports = async function handler(req, res) {
   const SCRAPINGBEE_KEY = process.env.SCRAPINGBEE_KEY;
-  const BIP_CARD        = process.env.BIP_CARD_NUMBER || '78210302';
+  const BIP_CARD  = req.query.card || process.env.BIP_CARD_NUMBER || '78210302';
+  const CARD_NAME = req.query.name || 'Bip';
 
   if (!SCRAPINGBEE_KEY) {
     return res.status(500).json({ error: 'SCRAPINGBEE_KEY no configurada' });
@@ -32,7 +33,6 @@ module.exports = async function handler(req, res) {
     }
 
     const html = await response.text();
-
     const regex = /class="verdanabold-ckc"[^>]*>([^<]*)<\/td>/gi;
     const matches = [...html.matchAll(regex)];
 
@@ -43,7 +43,7 @@ module.exports = async function handler(req, res) {
     const rawBalance = matches[5][1].trim();
     const balance    = parseInt(rawBalance.replace(/[$.,]/g, ''));
 
-    return res.json({ balance, rawBalance, cardNumber: BIP_CARD, ok: true });
+    return res.json({ balance, rawBalance, cardNumber: BIP_CARD, cardName: CARD_NAME, ok: true });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
