@@ -1,7 +1,6 @@
-// api/bip.js — Vercel Serverless Function
-// Consulta saldo Bip via ScrapingBee (proxy chileno) y retorna JSON limpio
+// api/bip.js — Vercel Serverless Function (CommonJS)
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const SCRAPINGBEE_KEY = process.env.SCRAPINGBEE_KEY;
   const BIP_CARD        = process.env.BIP_CARD_NUMBER || '78210302';
 
@@ -16,10 +15,10 @@ export default async function handler(req, res) {
   ].join('&');
 
   const scrapingBeeUrl =
-    `https://app.scrapingbee.com/api/v1/` +
-    `?api_key=${SCRAPINGBEE_KEY}` +
-    `&url=http://pocae.tstgo.cl/PortalCAE-WAR-MODULE/SesionPortalServlet` +
-    `&render_js=false&premium_proxy=true&country_code=cl`;
+    'https://app.scrapingbee.com/api/v1/' +
+    '?api_key=' + SCRAPINGBEE_KEY +
+    '&url=http://pocae.tstgo.cl/PortalCAE-WAR-MODULE/SesionPortalServlet' +
+    '&render_js=false&premium_proxy=true&country_code=cl';
 
   try {
     const response = await fetch(scrapingBeeUrl, {
@@ -29,12 +28,11 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
-      return res.status(502).json({ error: `ScrapingBee error: ${response.status}` });
+      return res.status(502).json({ error: 'ScrapingBee error: ' + response.status });
     }
 
     const html = await response.text();
 
-    // Extraer celdas con class="verdanabold-ckc" — índice 5 = saldo
     const regex = /class="verdanabold-ckc"[^>]*>([^<]*)<\/td>/gi;
     const matches = [...html.matchAll(regex)];
 
@@ -50,4 +48,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};
