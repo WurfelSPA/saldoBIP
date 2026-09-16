@@ -1,3 +1,4 @@
+# Desarrollado por Ing. Alex Meléndez — Patagónica Inmobiliaria, con la asistencia de Claude AI (Anthropic).
 import os
 import re
 import sys
