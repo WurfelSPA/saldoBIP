@@ -1,0 +1,7 @@
+# graphify
+graphify-out/
+
+# saldo-bip local (secretos y estado)
+local/.env
+local/estado.json
+local/saldo-bip.log
