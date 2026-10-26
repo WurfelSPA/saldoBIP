@@ -70,6 +70,12 @@ async function getBalance(card) {
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const html = new TextDecoder('latin1').decode(await r.arrayBuffer());
+  // Desde 2026-10-23 Radware redirige a validate.perfdrive.com con hCaptcha (también a Chrome headless)
+  if (r.url.includes('perfdrive.com') || /Radware Bot Manager/i.test(html)) {
+    const e = new Error('sitio Bip bloqueado por captcha de Radware');
+    e.captcha = true;
+    throw e;
+  }
   // Celdas class="verdanabold-ckc": índice 5 = saldo, ej "$11.875"
   const cells = [...html.matchAll(/class="verdanabold-ckc"[^>]*>([\s\S]*?)<\/td>/gi)]
     .map(m => m[1].replace(/<[^>]*>/g, '').trim());
@@ -105,6 +111,7 @@ async function main() {
 
   const hour = Number(new Date().toLocaleString('en-US', { timeZone: 'America/Santiago', hour: 'numeric', hour12: false }));
   let failures = 0;
+  let captchaNotified = false;
 
   for (const c of pending) {
     try {
@@ -119,6 +126,16 @@ async function main() {
     } catch (e) {
       failures++;
       log(`${c.name} (${c.card}): ERROR ${e.message}`);
+      if (e.captcha) {
+        // El bloqueo afecta a todas las tarjetas: un solo aviso y no seguir golpeando el sitio
+        if (hour >= LAST_ATTEMPT_HOUR && !captchaNotified) {
+          captchaNotified = true;
+          try { await telegram('❌ Saldo Bip: el sitio pocae.tstgo.cl está pidiendo captcha (Radware), no se pudo consultar ninguna tarjeta.'); }
+          catch (e2) { log(`No se pudo avisar el error por Telegram: ${e2.message}`); }
+        }
+        failures += pending.length - pending.indexOf(c) - 1;
+        break;
+      }
       if (hour >= LAST_ATTEMPT_HOUR) {
         try { await telegram(`❌ No se pudo consultar el saldo Bip de ${c.name} (${c.card}): ${e.message}`); }
         catch (e2) { log(`No se pudo avisar el error por Telegram: ${e2.message}`); }
